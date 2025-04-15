@@ -71,7 +71,7 @@ const Home = () => {
                         <Link to="/" className="text-green-600 font-medium uppercase">TRANG CHỦ</Link>
                         <Link to="/about" className="text-black font-medium uppercase">GIỚI THIỆU</Link>
                         <Link to="/menu" className="text-black font-medium uppercase">THỰC ĐƠN</Link>
-                        <Link to="/promotion" className="text-black font-medium uppercase">KHUYẾN MÃI</Link>
+                        <Link to="/promotions" className="text-black font-medium uppercase">KHUYẾN MÃI</Link>
                         <Link to="/contact" className="text-black font-medium uppercase">LIÊN HỆ</Link>
                     </div>
 
