@@ -1,18 +1,24 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaFacebook } from 'react-icons/fa';
+import { FaFacebook, FaShoppingCart } from 'react-icons/fa';
 import { IoCalendarOutline } from 'react-icons/io5';
 import { BsChevronDown, BsCheckCircleFill } from 'react-icons/bs';
 
 const Home = () => {
     const [showReservationModal, setShowReservationModal] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [showCartModal, setShowCartModal] = useState(false);
     const [selectedPeople, setSelectedPeople] = useState('12');
     const [showDropdown, setShowDropdown] = useState(false);
+    const [cart, setCart] = useState([
+        { id: 1, name: 'Bún bò', price: 30000, quantity: 1, image: 'bún bò(1).jpg' },
+        { id: 2, name: 'Cơm chiên dương châu', price: 35000, quantity: 2, image: 'cơm chiên dương châu(2).jpg' },
+    ]);
     const navigate = useNavigate();
 
     const reservationModalRef = useRef(null);
     const successModalRef = useRef(null);
+    const cartModalRef = useRef(null);
 
     // Close modals when clicking outside
     useEffect(() => {
@@ -23,19 +29,26 @@ const Home = () => {
             if (successModalRef.current && !successModalRef.current.contains(event.target)) {
                 setShowSuccessModal(false);
             }
+            if (cartModalRef.current && !cartModalRef.current.contains(event.target)) {
+                setShowCartModal(false);
+            }
         };
 
-        if (showReservationModal || showSuccessModal) {
+        if (showReservationModal || showSuccessModal || showCartModal) {
             document.addEventListener('mousedown', handleClickOutside);
         }
         
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [showReservationModal, showSuccessModal]);
+    }, [showReservationModal, showSuccessModal, showCartModal]);
 
     const toggleModal = () => {
         setShowReservationModal(!showReservationModal);
+    };
+
+    const toggleCartModal = () => {
+        setShowCartModal(!showCartModal);
     };
 
     const handlePeopleSelection = (value) => {
@@ -50,6 +63,26 @@ const Home = () => {
 
     const handleCloseSuccessModal = () => {
         setShowSuccessModal(false);
+    };
+
+    const formatPrice = (price) => {
+        return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + 'đ';
+    };
+
+    const calculateTotal = () => {
+        return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+    };
+
+    const handleChangeQuantity = (id, change) => {
+        setCart(cart.map(item =>
+            item.id === id
+                ? { ...item, quantity: Math.max(0, item.quantity + change) }
+                : item
+        ).filter(item => item.quantity > 0));
+    };
+
+    const handleRemoveItem = (id) => {
+        setCart(cart.filter(item => item.id !== id));
     };
 
     return (
@@ -77,13 +110,18 @@ const Home = () => {
 
                     {/* Shopping Cart and Login Button */}
                     <div className="flex items-center space-x-4">
-                        <Link to="/" className="text-black">
+                        <button onClick={toggleCartModal} className="text-black">
                             <div className="relative">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                                 </svg>
+                                {cart.length > 0 && (
+                                    <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                                        {cart.length}
+                                    </span>
+                                )}
                             </div>
-                        </Link>
+                        </button>
                         <Link to="/login" className="bg-white text-black border-2 border-black rounded-full px-6 py-1 font-bold">
                             Đăng nhập
                         </Link>
@@ -165,6 +203,105 @@ const Home = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Cart Modal */}
+            {showCartModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div ref={cartModalRef} className="bg-white w-full max-w-3xl mx-4 rounded-lg relative max-h-[95vh] overflow-auto">
+                        {/* Close button */}
+                        <button
+                            className="absolute top-3 right-3 text-gray-600 hover:text-gray-900 text-xl font-bold"
+                            onClick={toggleCartModal}
+                        >
+                            ✕
+                        </button>
+
+                        <div className="p-4">
+                            <h2 className="text-2xl font-bold border-b pb-4">Giỏ hàng</h2>
+
+                            <div className="overflow-x-auto">
+                                <table className="w-full mt-4">
+                                    <thead className="bg-gray-100">
+                                        <tr>
+                                            <th className="py-2 px-4 text-left">Món ăn</th>
+                                            <th className="py-2 px-4 text-center">Số lượng</th>
+                                            <th className="py-2 px-4 text-right">Đơn giá</th>
+                                            <th className="py-2 px-4 text-right">Thành tiền</th>
+                                            <th className="py-2 px-4 text-center">Xóa món</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {cart.map((item) => (
+                                            <tr key={item.id} className="border-b">
+                                                <td className="py-2 px-4 flex items-center">
+                                                    <img
+                                                        src={require(`../Images/food menu/${item.image}`)}
+                                                        alt={item.name}
+                                                        className="w-16 h-16 object-cover rounded-full mr-3"
+                                                    />
+                                                    <span className="font-medium">{item.name}</span>
+                                                </td>
+                                                <td className="py-4 px-4">
+                                                    <div className="flex items-center justify-center">
+                                                        <button
+                                                            onClick={() => handleChangeQuantity(item.id, -1)}
+                                                            className="bg-gray-200 px-2 py-1 rounded-l"
+                                                        >
+                                                            −
+                                                        </button>
+                                                        <input
+                                                            type="text"
+                                                            className="w-10 text-center border-t border-b border-gray-200 py-1"
+                                                            value={item.quantity}
+                                                            readOnly
+                                                        />
+                                                        <button
+                                                            onClick={() => handleChangeQuantity(item.id, 1)}
+                                                            className="bg-gray-200 px-2 py-1 rounded-r"
+                                                        >
+                                                            +
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                                <td className="py-4 px-4 text-right">
+                                                    {formatPrice(item.price)}
+                                                </td>
+                                                <td className="py-4 px-4 text-right">
+                                                    {formatPrice(item.price * item.quantity)}
+                                                </td>
+                                                <td className="py-4 px-4 text-center">
+                                                    <button
+                                                        onClick={() => handleRemoveItem(item.id)}
+                                                        className="text-red-500 hover:text-red-700"
+                                                    >
+                                                        <FaShoppingCart />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div className="mt-6 border-t pt-4">
+                                <div className="flex justify-between items-center text-lg font-bold">
+                                    <div>Tổng cộng</div>
+                                    <div>{formatPrice(calculateTotal())}</div>
+                                </div>
+                            </div>
+                            
+                            <div className="mt-6 flex justify-center">
+                                <button
+                                    className="bg-amber-500 hover:bg-amber-600 text-white font-medium py-3 px-16 rounded-md transition duration-200"
+                                    onClick={() => navigate('/menu')}
+                                >
+                                    Tiến hành đặt món
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Reservation Modal */}
             {showReservationModal && (
