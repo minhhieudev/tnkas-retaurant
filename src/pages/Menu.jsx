@@ -687,7 +687,7 @@ const Menu = () => {
                                     onClick={handleAddToCartFromModal}
                                     className="w-full py-3 bg-teal-800 text-white font-medium rounded-md"
                                 >
-                                    Tổng 180.000
+                                    Thanh toán 180.000
                                 </button>
                             </div>
                         </div>
