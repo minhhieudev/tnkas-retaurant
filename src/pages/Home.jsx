@@ -85,6 +85,11 @@ const Home = () => {
         setCart(cart.filter(item => item.id !== id));
     };
 
+    const handleHomeCheckout = () => {
+        setShowCartModal(false);
+        setShowSuccessModal(true);
+    };
+
     return (
         <div className="min-h-screen" style={{ backgroundImage: `url(${require("../Images/bg-home.png")})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
             {/* Navigation Bar */}
@@ -293,7 +298,7 @@ const Home = () => {
                             <div className="mt-6 flex justify-center">
                                 <button
                                     className="bg-amber-500 hover:bg-amber-600 text-white font-medium py-3 px-16 rounded-md transition duration-200"
-                                    onClick={() => navigate('/menu')}
+                                    onClick={handleHomeCheckout}
                                 >
                                     Tiến hành đặt món
                                 </button>
@@ -437,11 +442,11 @@ const Home = () => {
                                 <BsCheckCircleFill className="text-white text-5xl" />
                             </div>
                             
-                            <h2 className="text-xl font-bold mb-2">Đặt bàn thành công!</h2>
+                            <h2 className="text-xl font-bold mb-2">Đặt món thành công!</h2>
                             
                             <p className="text-center mb-6">
                                 Chúng tôi rất mong được đón tiếp và mang đến cho quý khách một 
-                                trải nghiệm ẩm thực tuyệt vời. Hẹn gặp lại sớm!
+                                trải nghiệm ẩm thực tuyệt vời!
                             </p>
                             
                             <button 
