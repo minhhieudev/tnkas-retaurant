@@ -15,11 +15,26 @@ const Menu = () => {
     const [showCartModal, setShowCartModal] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [showDiscountModal, setShowDiscountModal] = useState(false);
+    const [showOrderModal, setShowOrderModal] = useState(false);
+    const [currentOrderItem, setCurrentOrderItem] = useState(null);
+    const [orderQuantity, setOrderQuantity] = useState(1);
+    const [orderOptions, setOrderOptions] = useState({
+        size: 'S',
+        extras: {
+            'Thịt bò': true,
+            'Bánh tráng mỏng': true
+        },
+        notes: {
+            'Bình thường': true,
+            'Không dầu ớt': false
+        }
+    });
     const [discountCode, setDiscountCode] = useState('');
     const navigate = useNavigate();
 
     const cartModalRef = useRef(null);
     const discountModalRef = useRef(null);
+    const orderModalRef = useRef(null);
 
     // Close modals when clicking outside
     useEffect(() => {
@@ -30,16 +45,19 @@ const Menu = () => {
             if (discountModalRef.current && !discountModalRef.current.contains(event.target)) {
                 setShowDiscountModal(false);
             }
+            if (orderModalRef.current && !orderModalRef.current.contains(event.target)) {
+                setShowOrderModal(false);
+            }
         };
 
-        if (showCartModal || showDiscountModal) {
+        if (showCartModal || showDiscountModal || showOrderModal) {
             document.addEventListener('mousedown', handleClickOutside);
         }
 
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [showCartModal, showDiscountModal]);
+    }, [showCartModal, showDiscountModal, showOrderModal]);
 
     const [featuredItems, setFeaturedItems] = useState([
         { id: 1, name: 'Bò kho', price: 35000, image: 'bò kho(1).jpg' },
@@ -79,6 +97,29 @@ const Menu = () => {
         return calculateTotal() + deliveryFee;
     };
 
+    const handleShowOrderModal = (item) => {
+        setCurrentOrderItem(item);
+        setOrderQuantity(1);
+        setOrderOptions({
+            size: 'S',
+            extras: {
+                'Thịt bò': false,
+                'Bánh tráng mỏng': false
+            },
+            notes: {
+                'Bình thường': true,
+                'Không dầu ớt': false
+            }
+        });
+        setShowOrderModal(true);
+    };
+
+    const handleCloseOrderModal = () => {
+        setShowOrderModal(false);
+        setCurrentOrderItem(null);
+        setOrderQuantity(1);
+    };
+
     const handleAddToCart = (item) => {
         const existingItem = cart.find(cartItem => cartItem.id === item.id);
         if (existingItem) {
@@ -92,12 +133,69 @@ const Menu = () => {
         }
     };
 
+    const handleAddToCartFromModal = () => {
+        if (currentOrderItem) {
+            // Create a customized item with selected options
+            const customizedItem = {
+                ...currentOrderItem,
+                quantity: orderQuantity,
+                customizations: { ...orderOptions }
+            };
+            
+            const existingItemIndex = cart.findIndex(cartItem => cartItem.id === currentOrderItem.id);
+            
+            if (existingItemIndex >= 0) {
+                // Update existing item
+                const updatedCart = [...cart];
+                updatedCart[existingItemIndex] = customizedItem;
+                setCart(updatedCart);
+            } else {
+                // Add new item
+                setCart([...cart, customizedItem]);
+            }
+            
+            setShowOrderModal(false);
+            setCurrentOrderItem(null);
+        }
+    };
+
     const handleChangeQuantity = (id, change) => {
         setCart(cart.map(item =>
             item.id === id
                 ? { ...item, quantity: Math.max(0, item.quantity + change) }
                 : item
         ).filter(item => item.quantity > 0));
+    };
+
+    const handleOrderQuantityChange = (change) => {
+        setOrderQuantity(Math.max(1, orderQuantity + change));
+    };
+
+    const handleSizeChange = (size) => {
+        setOrderOptions({
+            ...orderOptions,
+            size
+        });
+    };
+
+    const handleExtraToggle = (extra) => {
+        setOrderOptions({
+            ...orderOptions,
+            extras: {
+                ...orderOptions.extras,
+                [extra]: !orderOptions.extras[extra]
+            }
+        });
+    };
+
+    const handleNoteToggle = (note) => {
+        setOrderOptions({
+            ...orderOptions,
+            notes: {
+                ...orderOptions.notes,
+                [note]: !orderOptions.notes[note]
+            }
+        });
     };
 
     const toggleCartModal = () => {
@@ -206,7 +304,7 @@ const Menu = () => {
                                             {formatPrice(item.price)}{item.perUnit || ''}
                                         </div>
                                         <button
-                                            onClick={() => handleAddToCart(item)}
+                                            onClick={() => handleShowOrderModal(item)}
                                             className="mt-2 w-[40%] py-1 px-4 bg-orange-500 text-black text-sm font-medium rounded-lg hover:bg-orange-500 transition border border-orange-500"
                                         >
                                             Đặt món
@@ -418,6 +516,180 @@ const Menu = () => {
                             >
                                 Thoát
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Order Modal */}
+            {showOrderModal && currentOrderItem && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div ref={orderModalRef} className="bg-white w-full max-w-md mx-4 rounded-lg relative">
+                        {/* Close button */}
+                        <button
+                            className="absolute top-3 right-3 text-gray-600 hover:text-gray-900 text-xl font-bold"
+                            onClick={handleCloseOrderModal}
+                        >
+                            ✕
+                        </button>
+
+                        <div className="p-5">
+                            <h2 className="text-xl font-bold text-center text-teal-800 border-b pb-2">Đặt món</h2>
+
+                            <div className="flex items-center py-3 border-b">
+                                <img
+                                    src={require(`../Images/food menu/${currentOrderItem.image}`)}
+                                    alt={currentOrderItem.name}
+                                    className="w-14 h-14 object-cover rounded-full mr-3"
+                                />
+                                <div className="flex-1">
+                                    <h3 className="font-medium">{currentOrderItem.name}</h3>
+                                    <p className="text-sm text-gray-600">
+                                        Thịt bò, chuối chát, củ rủi hành tây, rau thơm, dầu phộng
+                                    </p>
+                                </div>
+                                
+                                <div className="flex items-center">
+                                    <button
+                                        onClick={() => handleOrderQuantityChange(-1)}
+                                        className="h-8 w-8 bg-white border border-gray-300 flex items-center justify-center text-gray-600 rounded-l hover:bg-gray-100"
+                                    >
+                                        <FaMinus className="text-xs" />
+                                    </button>
+                                    <div className="w-8 h-8 flex items-center justify-center border-t border-b border-gray-300">
+                                        {orderQuantity}
+                                    </div>
+                                    <button
+                                        onClick={() => handleOrderQuantityChange(1)}
+                                        className="h-8 w-8 bg-white border border-gray-300 flex items-center justify-center text-green-600 rounded-r hover:bg-gray-100"
+                                    >
+                                        <FaPlus className="text-xs" />
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="py-3 border-b">
+                                <p className="font-medium mb-2">Vui lòng chọn tùy chọn</p>
+                                <div className="flex justify-between items-center mb-2">
+                                    <div className="flex items-center">
+                                        <input 
+                                            type="checkbox" 
+                                            id="size-s" 
+                                            className="w-5 h-5 mr-3" 
+                                            checked={orderOptions.size === 'S'}
+                                            onChange={() => handleSizeChange('S')}
+                                        />
+                                        <label htmlFor="size-s">Size S</label>
+                                    </div>
+                                    <div className="font-medium">125.000</div>
+                                    <div className="w-5 h-5 border border-green-600 rounded-sm flex items-center justify-center">
+                                        {orderOptions.size === 'S' && <div className="w-3 h-3 bg-green-600 rounded-sm"></div>}
+                                    </div>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <div className="flex items-center">
+                                        <input 
+                                            type="checkbox" 
+                                            id="size-l" 
+                                            className="w-5 h-5 mr-3" 
+                                            checked={orderOptions.size === 'L'}
+                                            onChange={() => handleSizeChange('L')}
+                                        />
+                                        <label htmlFor="size-l">Size L</label>
+                                    </div>
+                                    <div className="font-medium">150.000</div>
+                                    <div className="w-5 h-5 border border-green-600 rounded-sm flex items-center justify-center">
+                                        {orderOptions.size === 'L' && <div className="w-3 h-3 bg-green-600 rounded-sm"></div>}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="py-3 border-b">
+                                <p className="font-medium mb-2">Thêm</p>
+                                <div className="flex justify-between items-center mb-2">
+                                    <div className="flex items-center">
+                                        <input 
+                                            type="checkbox" 
+                                            id="extra-beef" 
+                                            className="w-5 h-5 mr-3"
+                                            checked={orderOptions.extras['Thịt bò']}
+                                            onChange={() => handleExtraToggle('Thịt bò')} 
+                                        />
+                                        <label htmlFor="extra-beef">Thịt bò</label>
+                                    </div>
+                                    <div className="font-medium">50.000</div>
+                                    <div className="w-5 h-5 border border-green-600 rounded-sm flex items-center justify-center">
+                                        {orderOptions.extras['Thịt bò'] && <div className="w-3 h-3 bg-green-600 rounded-sm"></div>}
+                                    </div>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <div className="flex items-center">
+                                        <input 
+                                            type="checkbox" 
+                                            id="extra-thin-bread" 
+                                            className="w-5 h-5 mr-3"
+                                            checked={orderOptions.extras['Bánh tráng mỏng']}
+                                            onChange={() => handleExtraToggle('Bánh tráng mỏng')}  
+                                        />
+                                        <label htmlFor="extra-thin-bread">Bánh tráng mỏng</label>
+                                    </div>
+                                    <div className="font-medium">5.000</div>
+                                    <div className="w-5 h-5 border border-green-600 rounded-sm flex items-center justify-center">
+                                        {orderOptions.extras['Bánh tráng mỏng'] && <div className="w-3 h-3 bg-green-600 rounded-sm"></div>}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="py-3 border-b">
+                                <p className="font-medium mb-2">Ghi chú món</p>
+                                <div className="flex justify-between items-center mb-2">
+                                    <div className="flex items-center">
+                                        <input 
+                                            type="checkbox" 
+                                            id="note-normal" 
+                                            className="w-5 h-5 mr-3"
+                                            checked={orderOptions.notes['Bình thường']}
+                                            onChange={() => handleNoteToggle('Bình thường')}  
+                                        />
+                                        <label htmlFor="note-normal">Bình thường</label>
+                                    </div>
+                                    <div className="w-5 h-5 border border-green-600 rounded-sm flex items-center justify-center">
+                                        {orderOptions.notes['Bình thường'] && <div className="w-3 h-3 bg-green-600 rounded-sm"></div>}
+                                    </div>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <div className="flex items-center">
+                                        <input 
+                                            type="checkbox" 
+                                            id="note-no-chili" 
+                                            className="w-5 h-5 mr-3"
+                                            checked={orderOptions.notes['Không dầu ớt']}
+                                            onChange={() => handleNoteToggle('Không dầu ớt')}  
+                                        />
+                                        <label htmlFor="note-no-chili">Không dầu phộng</label>
+                                    </div>
+                                    <div className="w-5 h-5 border border-green-600 rounded-sm flex items-center justify-center">
+                                        {orderOptions.notes['Không dầu ớt'] && <div className="w-3 h-3 bg-green-600 rounded-sm"></div>}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="pt-3 pb-2">
+                                <textarea
+                                    className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                                    placeholder="Ghi chú"
+                                    rows={3}
+                                ></textarea>
+                            </div>
+
+                            <div className="mt-3">
+                                <button
+                                    onClick={handleAddToCartFromModal}
+                                    className="w-full py-3 bg-teal-800 text-white font-medium rounded-md"
+                                >
+                                    Tổng 180.000
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
