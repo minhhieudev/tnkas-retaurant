@@ -156,6 +156,8 @@ const Menu = () => {
             
             setShowOrderModal(false);
             setCurrentOrderItem(null);
+            // Show success modal after adding to cart
+            setShowSuccessModal(true);
         }
     };
 
